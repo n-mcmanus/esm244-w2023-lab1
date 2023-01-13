@@ -1,0 +1,16 @@
+---
+title: "ESM244 Lab1"
+author: "Nick McManus"
+date: "2023-01-13"
+output: html_document
+---
+
+```{r setup, include=TRUE, echo = TRUE, warning = FALSE, message = FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+
+library(here)
+library(tidyverse)
+library(sf)
+library(tmap)
+```
+
