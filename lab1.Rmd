@@ -36,6 +36,85 @@ ggplot(data = top_5_status, aes(x = fct_reorder(legal_status, tree_count),
 
 ```
 
+Keep observations where legal status is "Permitted Site" and caretaker is "MTA"
+
+```{r}
+# sf_strees$legal_status %>% unique()
+
+permitted_mta <- sf_trees %>% 
+  filter(legal_status == "Permitted Site",
+         caretaker == "MTA")
+```
+
+Keep Blackwood acacia trees, keep only legal_status, date, latitude, longitude columns
+
+```{r}
+## the naming of the species is weird format
+## if you don't want to rename/clean up column, you can 
+## use string detect fxn to look for a specific string
+## within a column. Case sensitive
+
+blackwood_acacia <- sf_trees %>% 
+  filter(str_detect(species, "Blackwood Acacia")) %>% 
+  select(legal_status, date, latitude, longitude)
+
+## make a plot
+ggplot(data = blackwood_acacia, aes(x = longitude, y = latitude)) +
+  geom_point()
+```
 
 
+### Use tidyr::separate() to separate one column into multiple and tidyr::unite() to rejoin
+
+```{r}
+## break up the pesky species names
+sf_trees_sep <- sf_trees %>% 
+  separate(species, into = c("spp_scientific", 'ssp_comon'),
+           sep = ' :: ')
+
+## join every column between tree_id and species
+sf_trees_unite <- sf_trees %>% 
+  unite("id_status", tree_id:species, sep = '_NEW_')
+```
+
+
+### Make some maps!
+
+```{r}
+## make simple features obj
+blackwood_acacia_sf <- blackwood_acacia %>% 
+  drop_na(longitude, latitude) %>% 
+  st_as_sf(coords = c('longitude', 'latitude')) #take spatial/temporal data and put in sf format
+
+# tell it what the coordinate system is
+st_crs(blackwood_acacia_sf) <- 'EPSG:4326'
+
+ggplot(data = blackwood_acacia_sf) +
+  geom_sf(color = 'darkgreen') +  #automatically knows coord column is aes (x and y)
+  theme_minimal()
+```
+
+Read in SF streets data
+```{r}
+sf_map_sf <- read_sf(here('data', 'sf_map', 'tl_2017_06075_roads.shp')) %>% 
+# in different crs, so transform to match tree point data
+  st_transform('EPSG:4326')
+```
+
+PLot some stuff!
+```{r}
+ggplot() +
+  geom_sf(data = sf_map_sf, size = 0.1, color = 'darkgrey') +
+  geom_sf(data = blackwood_acacia_sf, color = 'darkgreen', size = 0.5) +
+  theme_void() + #get rid of axes and lines
+  labs(title = 'Blackwood acacias in San Francisco')
+```
+
+### Interactive map!
+
+```{r}
+tmap_mode('view')
+tm_shape(blackwood_acacia_sf) +
+  tm_dots()
+```
 
